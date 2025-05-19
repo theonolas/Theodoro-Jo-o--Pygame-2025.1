@@ -1,61 +1,109 @@
-# ===== Inicialização =====
-# ----- Importa e inicia pacotes
 import pygame
-from random import *
-from pygame.sprite import Group
+import random
+import sys
 import os
-from os import path
 
+# Começa o jogo
 pygame.init()
 
-# ----- Gera tela principal
-window = pygame.display.set_mode((500, 400))
-pygame.display.set_caption('Py hunter!')
+# Constantes default
+SCREEN_WIDTH = 800
+SCREEN_HEIGHT = 400
+GROUND_HEIGHT = 50
+FPS = 60
 
-# ----- Inicia estruturas de dados
-game = True
+# Cores
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+GRAY = (100, 100, 100)
 
-spritesheet = pygame.image.load("img/Quarble_8.webp").convert_alpha()
+# Janela
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+pygame.display.set_caption("Astro Jump")
+clock = pygame.time.Clock()
 
-import pygame
+#Classes
+class Dinosaur:
+    def __init__(self):
+        self.x = 50
+        self.y = SCREEN_HEIGHT - GROUND_HEIGHT - 60  
+        self.width = 40
+        self.height = 60 
+        self.jumping = False
+        self.jump_velocity = 0
+        self.gravity = 1
+        self.jump_power = -20
+        
+        # Load and scale the astronaut image
+        image_path = os.path.join('img', 'astronauta1.png')
+        self.image = pygame.image.load(image_path)
+        self.image = pygame.transform.scale(self.image, (self.width, self.height))
 
-def carregar_sprites(imagem_spritesheet, num_linhas, num_colunas):
-    largura_sprite = imagem_spritesheet.get_width() // num_colunas
-    altura_sprite = imagem_spritesheet.get_height() // num_linhas
-    lista_sprites = []
+    def jump(self):
+        if not self.jumping:
+            self.jump_velocity = self.jump_power
+            self.jumping = True
 
-    for linha in range(num_linhas):
-        for coluna in range(num_colunas):
-            pos_x = coluna * largura_sprite
-            pos_y = linha * altura_sprite
-            sprite = pygame.Surface((largura_sprite, altura_sprite), pygame.SRCALPHA)
-            sprite.blit(imagem_spritesheet, (0, 0), pygame.Rect(pos_x, pos_y, largura_sprite, altura_sprite))
-            lista_sprites.append(sprite)
-    return lista_sprites
+    def update(self):
+        if self.jumping:
+            self.y += self.jump_velocity
+            self.jump_velocity += self.gravity
+
+            if self.y >= SCREEN_HEIGHT - GROUND_HEIGHT - self.height:
+                self.y = SCREEN_HEIGHT - GROUND_HEIGHT - self.height
+                self.jumping = False
+                self.jump_velocity = 0
+
+    def draw(self):
+        screen.blit(self.image, (self.x, self.y))
 
 
-sprites = carregar_sprites(spritesheet, 7, 4)
-sprites_nomeados = {}
-for i in range(len(sprites)):
-    nome = f"sprite{i+1}"
-    sprites_nomeados[nome] = sprites[i]
+def main():
+    dinosaur = Dinosaur()
+    score = 0
+    game_over = False
+    font = pygame.font.Font(None, 36)
 
-sprites_morte= [sprites_nomeados['sprite1'],sprites_nomeados['sprite2'],sprites_nomeados['sprite3'],sprites_nomeados['sprite4']]
-print(sprites_morte)
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    if game_over:
+                        # Reset game
+                        dinosaur = Dinosaur()
+                        score = 0
+                        game_over = False
+                    else:
+                        dinosaur.jump()
 
-# ===== Loop principal =====
-while game:
-    # ----- Trata eventos
-    for event in pygame.event.get():
-        # ----- Verifica consequências
-        if event.type == pygame.QUIT:
-            game = False
+        if not game_over:
+            # Update
+            dinosaur.update()
 
-    # ----- Gera saídas
-    window.fill((255, 255, 255))  # Preenche com a cor branca
 
-    # ----- Atualiza estado do jogo
-    pygame.display.update()  # Mostra o novo frame para o jogador
+        # Draw
+        screen.fill(WHITE)
+        
+        # Draw ground
+        pygame.draw.rect(screen, GRAY, (0, SCREEN_HEIGHT - GROUND_HEIGHT, SCREEN_WIDTH, GROUND_HEIGHT))
+        
+        # Draw dinosaur
+        dinosaur.draw()
+        
 
-# ===== Finalização =====
-pygame.quit()  # Função do PyGame que finaliza os recursos utilizados
+        # Draw score
+        score_text = font.render(f"Score: {score}", True, BLACK)
+        screen.blit(score_text, (10, 10))
+
+        if game_over:
+            game_over_text = font.render("Game Over! Press SPACE to restart", True, BLACK)
+            screen.blit(game_over_text, (SCREEN_WIDTH//2 - 200, SCREEN_HEIGHT//2))
+
+        pygame.display.flip()
+        clock.tick(FPS)
+
+if __name__ == "__main__":
+    main()
