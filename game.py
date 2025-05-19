@@ -34,7 +34,7 @@ class Dinosaur:
         self.gravity = 1
         self.jump_power = -20
         
-        # Load and scale the astronaut image
+        # Imagem do astronauta
         image_path = os.path.join('img', 'astronauta1.png')
         self.image = pygame.image.load(image_path)
         self.image = pygame.transform.scale(self.image, (self.width, self.height))
@@ -57,9 +57,23 @@ class Dinosaur:
     def draw(self):
         screen.blit(self.image, (self.x, self.y))
 
+class Cactus:
+    def __init__(self):
+        self.width = 20
+        self.height = 40
+        self.x = SCREEN_WIDTH
+        self.y = SCREEN_HEIGHT - GROUND_HEIGHT - self.height
+        self.speed = 5
+
+    def update(self):
+        self.x -= self.speed
+
+    def draw(self):
+        pygame.draw.rect(screen, BLACK, (self.x, self.y, self.width, self.height))
 
 def main():
     dinosaur = Dinosaur()
+    cacti = []
     score = 0
     game_over = False
     font = pygame.font.Font(None, 36)
@@ -74,27 +88,48 @@ def main():
                     if game_over:
                         # Reset game
                         dinosaur = Dinosaur()
+                        cacti = []
                         score = 0
                         game_over = False
                     else:
                         dinosaur.jump()
 
         if not game_over:
-            # Update
             dinosaur.update()
 
+            # faz aparecer o cactus
+            if len(cacti) == 0 or cacti[-1].x < SCREEN_WIDTH - 300:
+                if random.random() < 0.02:
+                    cacti.append(Cactus())
 
-        # Draw
+            for cactus in cacti[:]:
+                cactus.update()
+                if cactus.x + cactus.width < 0:
+                    cacti.remove(cactus)
+                    score += 1
+
+            # Colisão 
+            for cactus in cacti:
+                if (dinosaur.x < cactus.x + cactus.width and
+                    dinosaur.x + dinosaur.width > cactus.x and
+                    dinosaur.y < cactus.y + cactus.height and
+                    dinosaur.y + dinosaur.height > cactus.y):
+                    game_over = True
+
+        # Desenha
         screen.fill(WHITE)
         
-        # Draw ground
+        # Chão
         pygame.draw.rect(screen, GRAY, (0, SCREEN_HEIGHT - GROUND_HEIGHT, SCREEN_WIDTH, GROUND_HEIGHT))
         
-        # Draw dinosaur
+        # Desenha o dinossauro
         dinosaur.draw()
         
+        # Desenha o cactus
+        for cactus in cacti:
+            cactus.draw()
 
-        # Draw score
+        # Desenha o score
         score_text = font.render(f"Score: {score}", True, BLACK)
         screen.blit(score_text, (10, 10))
 
